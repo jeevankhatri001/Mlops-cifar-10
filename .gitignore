@@ -1,6 +1,8 @@
 venv/
-__pycache__/
-*.pyc
-.ipynb_checkpoints/
-mlruns/
 .env
+__pycache__/
+mlruns/
+data/
+models/
+*.pth
+*.pt
