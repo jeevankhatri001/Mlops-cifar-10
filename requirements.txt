@@ -30,6 +30,7 @@ flatbuffers==25.12.19
 fqdn==1.5.1
 gast==0.7.0
 google-pasta==0.2.0
+greenlet==3.2.5
 grpcio==1.80.0
 h11==0.16.0
 h5py==3.14.0
@@ -86,6 +87,7 @@ prometheus-client==0.25.0
 prompt-toolkit==3.0.52
 protobuf==6.33.6
 psutil==7.2.2
+psycopg2-binary==2.9.12
 ptyprocess==0.7.0
 pure-eval==0.2.3
 pyarrow==21.0.0
@@ -95,6 +97,7 @@ pygments==2.20.0
 pyOpenSSL @ file:///tmp/build/80754af9/pyopenssl_1608057966937/work
 PySocks @ file:///tmp/build/80754af9/pysocks_1605305812635/work
 python-dateutil==2.9.0.post0
+python-dotenv==1.2.1
 python-json-logger==4.0.0
 pyyaml==6.0.3
 pyzmq==27.1.0
@@ -110,6 +113,7 @@ ruamel-yaml-conda @ file:///tmp/build/80754af9/ruamel_yaml_1616016711199/work
 send2trash==2.1.0
 six @ file:///tmp/build/80754af9/six_1623709665295/work
 soupsieve==2.8.3
+sqlalchemy==2.0.49
 stack-data==0.6.3
 tensorboard==2.20.0
 tensorboard-data-server==0.7.2
