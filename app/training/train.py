@@ -12,7 +12,7 @@ from app.training.model import CIFAR10CNN
 from app.training.evaluate import evaluate_model
 
 
-mlflow.set_tracking_uri("http://localhost:5000")
+mlflow.set_tracking_uri("http://host.docker.internal:5000")
 mlflow.set_experiment("cifar10_training")
 
 
@@ -98,11 +98,11 @@ with mlflow.start_run():
         model_path
     )
 
-    mlflow.log_artifact(model_path)
+   # mlflow.log_artifact(model_path)
 
-    mlflow.pytorch.log_model(
-        model,
-        "cifar10_model"
-    )
+  #  mlflow.pytorch.log_model(
+   #     model,
+ #       "cifar10_model"
+#    )
 
     print("Training completed!")
