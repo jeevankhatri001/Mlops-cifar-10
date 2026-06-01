@@ -1,0 +1,24 @@
+[2026-06-01T11:12:27.490+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2026-06-01T11:12:27.509+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: cifar10_training_pipeline.pipeline_complete manual__2026-06-01T11:09:42+00:00 [queued]>
+[2026-06-01T11:12:27.516+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: cifar10_training_pipeline.pipeline_complete manual__2026-06-01T11:09:42+00:00 [queued]>
+[2026-06-01T11:12:27.517+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 1
+[2026-06-01T11:12:27.528+0000] {taskinstance.py:2330} INFO - Executing <Task(BashOperator): pipeline_complete> on 2026-06-01 11:09:42+00:00
+[2026-06-01T11:12:27.535+0000] {warnings.py:112} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:62: DeprecationWarning: This process (pid=109) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  pid = os.fork()
+
+[2026-06-01T11:12:27.536+0000] {standard_task_runner.py:64} INFO - Started process 110 to run task
+[2026-06-01T11:12:27.537+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'cifar10_training_pipeline', 'pipeline_complete', 'manual__2026-06-01T11:09:42+00:00', '--job-id', '44', '--raw', '--subdir', 'DAGS_FOLDER/cifar10_training_dag.py', '--cfg-path', '/tmp/tmp2jdq5s5w']
+[2026-06-01T11:12:27.538+0000] {standard_task_runner.py:91} INFO - Job 44: Subtask pipeline_complete
+[2026-06-01T11:12:27.572+0000] {task_command.py:426} INFO - Running <TaskInstance: cifar10_training_pipeline.pipeline_complete manual__2026-06-01T11:09:42+00:00 [running]> on host b9dcb14f88e9
+[2026-06-01T11:12:27.639+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='jeevan' AIRFLOW_CTX_DAG_ID='cifar10_training_pipeline' AIRFLOW_CTX_TASK_ID='pipeline_complete' AIRFLOW_CTX_EXECUTION_DATE='2026-06-01T11:09:42+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-06-01T11:09:42+00:00'
+[2026-06-01T11:12:27.640+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-06-01T11:12:27.651+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-06-01T11:12:27.651+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', "echo 'CIFAR-10 MLOps training pipeline completed successfully'"]
+[2026-06-01T11:12:27.661+0000] {subprocess.py:86} INFO - Output:
+[2026-06-01T11:12:27.663+0000] {subprocess.py:93} INFO - CIFAR-10 MLOps training pipeline completed successfully
+[2026-06-01T11:12:27.663+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-06-01T11:12:27.663+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-06-01T11:12:27.683+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=cifar10_training_pipeline, task_id=pipeline_complete, run_id=manual__2026-06-01T11:09:42+00:00, execution_date=20260601T110942, start_date=20260601T111227, end_date=20260601T111227
+[2026-06-01T11:12:27.709+0000] {local_task_job_runner.py:243} INFO - Task exited with return code 0
+[2026-06-01T11:12:27.722+0000] {taskinstance.py:3503} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2026-06-01T11:12:27.724+0000] {local_task_job_runner.py:222} INFO - ::endgroup::

@@ -6,3 +6,8 @@ data/
 models/
 *.pth
 *.pt
+# generated outputs
+sample_images/
+notebooks/eda.html
+notebooks/figures/
+airflow/.env

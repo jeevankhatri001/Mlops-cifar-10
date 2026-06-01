@@ -1,0 +1,26 @@
+[2026-06-01T11:09:51.049+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2026-06-01T11:09:51.078+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: cifar10_training_pipeline.ingest_data manual__2026-06-01T11:09:42+00:00 [queued]>
+[2026-06-01T11:09:51.088+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: cifar10_training_pipeline.ingest_data manual__2026-06-01T11:09:42+00:00 [queued]>
+[2026-06-01T11:09:51.088+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 1
+[2026-06-01T11:09:51.105+0000] {taskinstance.py:2330} INFO - Executing <Task(BashOperator): ingest_data> on 2026-06-01 11:09:42+00:00
+[2026-06-01T11:09:51.114+0000] {warnings.py:112} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:62: DeprecationWarning: This process (pid=78) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  pid = os.fork()
+
+[2026-06-01T11:09:51.115+0000] {standard_task_runner.py:64} INFO - Started process 80 to run task
+[2026-06-01T11:09:51.118+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'cifar10_training_pipeline', 'ingest_data', 'manual__2026-06-01T11:09:42+00:00', '--job-id', '39', '--raw', '--subdir', 'DAGS_FOLDER/cifar10_training_dag.py', '--cfg-path', '/tmp/tmpdhbubvuq']
+[2026-06-01T11:09:51.119+0000] {standard_task_runner.py:91} INFO - Job 39: Subtask ingest_data
+[2026-06-01T11:09:51.173+0000] {task_command.py:426} INFO - Running <TaskInstance: cifar10_training_pipeline.ingest_data manual__2026-06-01T11:09:42+00:00 [running]> on host b9dcb14f88e9
+[2026-06-01T11:09:51.278+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='jeevan' AIRFLOW_CTX_DAG_ID='cifar10_training_pipeline' AIRFLOW_CTX_TASK_ID='ingest_data' AIRFLOW_CTX_EXECUTION_DATE='2026-06-01T11:09:42+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-06-01T11:09:42+00:00'
+[2026-06-01T11:09:51.279+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-06-01T11:09:51.294+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-06-01T11:09:51.295+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', '\n        cd /opt/***/project &&         POSTGRES_HOST=host.docker.internal REDIS_HOST=host.docker.internal MLFLOW_TRACKING_URI=http://host.docker.internal:5000 python -m app.ingestion.ingest\n        ']
+[2026-06-01T11:09:51.312+0000] {subprocess.py:86} INFO - Output:
+[2026-06-01T11:10:29.979+0000] {subprocess.py:93} INFO - Schema applied from /opt/***/project/app/database/schema.sql
+[2026-06-01T11:10:29.980+0000] {subprocess.py:93} INFO - Ingested 50000 images for split='train'
+[2026-06-01T11:10:29.980+0000] {subprocess.py:93} INFO - Ingested 10000 images for split='test'
+[2026-06-01T11:10:31.028+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-06-01T11:10:31.029+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-06-01T11:10:31.058+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=cifar10_training_pipeline, task_id=ingest_data, run_id=manual__2026-06-01T11:09:42+00:00, execution_date=20260601T110942, start_date=20260601T110951, end_date=20260601T111031
+[2026-06-01T11:10:31.117+0000] {local_task_job_runner.py:243} INFO - Task exited with return code 0
+[2026-06-01T11:10:31.148+0000] {taskinstance.py:3503} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-06-01T11:10:31.150+0000] {local_task_job_runner.py:222} INFO - ::endgroup::

@@ -1,0 +1,57 @@
+[2026-06-01T11:33:26.157+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2026-06-01T11:33:26.179+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: cifar10_training_pipeline.train_model manual__2026-06-01T11:32:53.280137+00:00 [queued]>
+[2026-06-01T11:33:26.186+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: cifar10_training_pipeline.train_model manual__2026-06-01T11:32:53.280137+00:00 [queued]>
+[2026-06-01T11:33:26.186+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 1
+[2026-06-01T11:33:26.200+0000] {taskinstance.py:2330} INFO - Executing <Task(BashOperator): train_model> on 2026-06-01 11:32:53.280137+00:00
+[2026-06-01T11:33:26.206+0000] {warnings.py:112} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:62: DeprecationWarning: This process (pid=120) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  pid = os.fork()
+
+[2026-06-01T11:33:26.208+0000] {standard_task_runner.py:64} INFO - Started process 121 to run task
+[2026-06-01T11:33:26.209+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'cifar10_training_pipeline', 'train_model', 'manual__2026-06-01T11:32:53.280137+00:00', '--job-id', '58', '--raw', '--subdir', 'DAGS_FOLDER/cifar10_training_dag.py', '--cfg-path', '/tmp/tmpcaqvzyc_']
+[2026-06-01T11:33:26.210+0000] {standard_task_runner.py:91} INFO - Job 58: Subtask train_model
+[2026-06-01T11:33:26.246+0000] {task_command.py:426} INFO - Running <TaskInstance: cifar10_training_pipeline.train_model manual__2026-06-01T11:32:53.280137+00:00 [running]> on host c01fc564bfa6
+[2026-06-01T11:33:26.318+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='jeevan' AIRFLOW_CTX_DAG_ID='cifar10_training_pipeline' AIRFLOW_CTX_TASK_ID='train_model' AIRFLOW_CTX_EXECUTION_DATE='2026-06-01T11:32:53.280137+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-06-01T11:32:53.280137+00:00'
+[2026-06-01T11:33:26.319+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-06-01T11:33:26.330+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-06-01T11:33:26.331+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', '\n        cd /opt/***/project &&         POSTGRES_HOST=host.docker.internal REDIS_HOST=host.docker.internal MLFLOW_TRACKING_URI=http://host.docker.internal:5000 EPOCHS=10 python -m app.training.train\n        ']
+[2026-06-01T11:33:26.342+0000] {subprocess.py:86} INFO - Output:
+[2026-06-01T11:33:31.625+0000] {subprocess.py:93} INFO - 2026/06/01 11:33:31 WARNING mlflow.utils.git_utils: Failed to import Git (the Git executable is probably not on your PATH), so Git SHA is not available. Error: Failed to initialize: Bad git executable.
+[2026-06-01T11:33:31.626+0000] {subprocess.py:93} INFO - The git executable must be specified in one of the following ways:
+[2026-06-01T11:33:31.626+0000] {subprocess.py:93} INFO -     - be included in your $PATH
+[2026-06-01T11:33:31.626+0000] {subprocess.py:93} INFO -     - be set via $GIT_PYTHON_GIT_EXECUTABLE
+[2026-06-01T11:33:31.626+0000] {subprocess.py:93} INFO -     - explicitly set via git.refresh(<full-path-to-git-executable>)
+[2026-06-01T11:33:31.627+0000] {subprocess.py:93} INFO - 
+[2026-06-01T11:33:31.627+0000] {subprocess.py:93} INFO - All git commands will error until this is rectified.
+[2026-06-01T11:33:31.627+0000] {subprocess.py:93} INFO - 
+[2026-06-01T11:33:31.627+0000] {subprocess.py:93} INFO - This initial message can be silenced or aggravated in the future by setting the
+[2026-06-01T11:33:31.627+0000] {subprocess.py:93} INFO - $GIT_PYTHON_REFRESH environment variable. Use one of the following values:
+[2026-06-01T11:33:31.627+0000] {subprocess.py:93} INFO -     - quiet|q|silence|s|silent|none|n|0: for no message or exception
+[2026-06-01T11:33:31.627+0000] {subprocess.py:93} INFO -     - warn|w|warning|log|l|1: for a warning message (logging level CRITICAL, displayed by default)
+[2026-06-01T11:33:31.628+0000] {subprocess.py:93} INFO -     - error|e|exception|raise|r|2: for a raised exception
+[2026-06-01T11:33:31.628+0000] {subprocess.py:93} INFO - 
+[2026-06-01T11:33:31.628+0000] {subprocess.py:93} INFO - Example:
+[2026-06-01T11:33:31.628+0000] {subprocess.py:93} INFO -     export GIT_PYTHON_REFRESH=quiet
+[2026-06-01T11:33:31.628+0000] {subprocess.py:93} INFO - 
+[2026-06-01T11:46:02.350+0000] {subprocess.py:93} INFO - Schema applied from /opt/***/project/app/database/schema.sql
+[2026-06-01T11:46:02.351+0000] {subprocess.py:93} INFO - Device: cpu | MLflow: http://host.docker.internal:5000 | epochs: 10
+[2026-06-01T11:46:02.352+0000] {subprocess.py:93} INFO - Epoch [1/10] Loss: 1.5339 Acc: 58.81%
+[2026-06-01T11:46:02.352+0000] {subprocess.py:93} INFO - Epoch [2/10] Loss: 1.2132 Acc: 63.08%
+[2026-06-01T11:46:02.352+0000] {subprocess.py:93} INFO - Epoch [3/10] Loss: 1.0825 Acc: 68.24%
+[2026-06-01T11:46:02.352+0000] {subprocess.py:93} INFO - Epoch [4/10] Loss: 0.9938 Acc: 68.95%
+[2026-06-01T11:46:02.352+0000] {subprocess.py:93} INFO - Epoch [5/10] Loss: 0.9405 Acc: 73.64%
+[2026-06-01T11:46:02.352+0000] {subprocess.py:93} INFO - Epoch [6/10] Loss: 0.8962 Acc: 74.11%
+[2026-06-01T11:46:02.352+0000] {subprocess.py:93} INFO - Epoch [7/10] Loss: 0.8520 Acc: 76.58%
+[2026-06-01T11:46:02.353+0000] {subprocess.py:93} INFO - Epoch [8/10] Loss: 0.8213 Acc: 76.50%
+[2026-06-01T11:46:02.353+0000] {subprocess.py:93} INFO - Epoch [9/10] Loss: 0.7961 Acc: 77.46%
+[2026-06-01T11:46:02.353+0000] {subprocess.py:93} INFO - Epoch [10/10] Loss: 0.7694 Acc: 76.80%
+[2026-06-01T11:46:02.353+0000] {subprocess.py:93} INFO - (warning) MLflow artifact upload skipped: [Errno 13] Permission denied: '/home/ubuntu'
+[2026-06-01T11:46:02.353+0000] {subprocess.py:93} INFO - Done. Model -> models/cifar10_cnn.pth
+[2026-06-01T11:46:02.353+0000] {subprocess.py:93} INFO - Logged run 9f0e15348df4413b9ecbb2afa500f459 to experiments table + MLflow.
+[2026-06-01T11:46:02.353+0000] {subprocess.py:93} INFO - 🏃 View run clean-crab-786 at: http://host.docker.internal:5000/#/experiments/1/runs/9f0e15348df4413b9ecbb2afa500f459
+[2026-06-01T11:46:02.354+0000] {subprocess.py:93} INFO - 🧪 View experiment at: http://host.docker.internal:5000/#/experiments/1
+[2026-06-01T11:46:03.298+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-06-01T11:46:03.300+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-06-01T11:46:03.321+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=cifar10_training_pipeline, task_id=train_model, run_id=manual__2026-06-01T11:32:53.280137+00:00, execution_date=20260601T113253, start_date=20260601T113326, end_date=20260601T114603
+[2026-06-01T11:46:03.377+0000] {local_task_job_runner.py:243} INFO - Task exited with return code 0
+[2026-06-01T11:46:03.397+0000] {taskinstance.py:3503} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-06-01T11:46:03.399+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
