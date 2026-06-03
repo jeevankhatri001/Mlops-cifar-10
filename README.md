@@ -1,426 +1,263 @@
-# 🚀 CIFAR-10 MLOps Pipeline
+# CIFAR-10 MLOps Pipeline
 
-An end-to-end MLOps pipeline for CIFAR-10 image classification using:
+An end-to-end MLOps pipeline for CIFAR-10 image classification, built as a CMP5366 coursework project. The system implements a complete data-analytics and machine-learning pipeline with polyglot persistence (PostgreSQL + Redis), automated orchestration, live inference with drift monitoring, and exploratory data analysis.
 
-- PyTorch
-- MLflow
-- FastAPI
-- PostgreSQL
-- Redis
-- Docker
-- Apache Airflow
-- AWS EC2
+## Tech Stack
 
----
+| Component | Technology | Role in Pipeline |
+|---|---|---|
+| Deep Learning | PyTorch | CNN model training and inference |
+| Dataset | CIFAR-10 (60,000 images) | Supervised image classification |
+| Relational Store | PostgreSQL 16 | Analytics store — image features, experiments, predictions (OBT design) |
+| Key-Value Store | Redis 7 | Fast pixel-array storage and retrieval for training/inference |
+| Experiment Tracking | MLflow | Hyperparameter, metric, and artifact logging |
+| API Framework | FastAPI | REST inference endpoint with Swagger UI |
+| Monitoring | Custom (z-score drift) | Per-request and population-level data-drift detection |
+| Orchestration | Apache Airflow | DAG-based pipeline automation |
+| Containerisation | Docker Compose | Service management for Postgres, Redis, Airflow |
+| Deployment | AWS EC2 (Ubuntu) | Cloud hosting |
 
-# 📌 Project Overview
+## Project Structure
 
-This project demonstrates a complete MLOps workflow for:
-
-- Training deep learning models
-- Experiment tracking
-- Workflow orchestration
-- API deployment
-- Containerization
-- Cloud deployment
-
-The system uses a CNN-based image classifier trained on the CIFAR-10 dataset.
-
----
-
-# 🛠️ Tech Stack
-
-| Component | Technology |
-|---|---|
-| Deep Learning | PyTorch |
-| Dataset | CIFAR-10 |
-| Experiment Tracking | MLflow |
-| API Framework | FastAPI |
-| Workflow Orchestration | Apache Airflow |
-| Database | PostgreSQL |
-| Message Broker | Redis |
-| Containerization | Docker |
-| Deployment | AWS EC2 Ubuntu |
-
----
-
-# 📂 Project Structure
-
-```bash
+```
 cifar10-mlops/
-│
 ├── app/
 │   ├── api/
-│   │   └── main.py
-│   │
-│   ├── training/
-│   │   ├── dataset.py
-│   │   ├── evaluate.py
-│   │   ├── model.py
-│   │   └── train.py
-│   │
-│   └── models/
-│
+│   │   ├── __init__.py
+│   │   └── main.py                # FastAPI app — /predict, /monitoring/stats, /monitoring/drift
+│   ├── database/
+│   │   ├── db.py                  # SQLAlchemy engine + init_db()
+│   │   ├── redis_client.py        # Redis connection pool
+│   │   └── schema.sql             # Analytics store schema (images, experiments, predictions)
+│   ├── inference/
+│   │   ├── __init__.py
+│   │   └── predict.py             # Lazy model loading, prediction + feature extraction
+│   ├── ingestion/
+│   │   ├── __init__.py
+│   │   ├── features.py            # Per-image feature engineering (brightness, contrast, RGB means)
+│   │   └── ingest.py              # ETL: torchvision → Postgres (features) + Redis (pixels)
+│   ├── monitoring/
+│   │   ├── __init__.py
+│   │   ├── baseline.py            # Training-set feature distribution (drift reference)
+│   │   ├── drift.py               # Z-score drift detection
+│   │   └── monitor.py             # Prediction logging + population drift report
+│   └── training/
+│       ├── dataset.py             # DataLoaders — torchvision or store-backed
+│       ├── evaluate.py            # Model evaluation
+│       ├── model.py               # CNN architecture (BatchNorm + Dropout)
+│       └── train.py               # Training loop — reads from store, logs to MLflow + DB
 ├── airflow/
 │   ├── dags/
-│   │   └── cifar10_pipeline.py
-│   │
-│   └── docker-compose-airflow.yml
-│
-├── docker-compose.yml
+│   │   └── cifar10_training_dag.py  # check_env → ingest → train → verify → complete
+│   ├── docker-compose-airflow.yml
+│   └── Dockerfile                 # CPU-only torch + pipeline deps
+├── notebooks/
+│   ├── build_eda_notebook.py      # Generates eda.ipynb
+│   └── eda.ipynb                  # Task 3 EDA — connects to Postgres analytics store
+├── scripts/
+│   └── export_samples.py          # Pull real CIFAR images from Redis → PNG for testing
+├── docker-compose.yml             # Postgres + Redis for the app
 ├── requirements.txt
-├── README.md
-└── .gitignore
+├── .env                           # Credentials (gitignored)
+├── .gitignore
+└── README.md
 ```
 
----
+## Architecture
 
-# ✨ Features
+### Storage Design (Polyglot Persistence)
 
-## ✅ Model Training
-- CNN-based CIFAR-10 classifier
-- Batch normalization
-- Dropout regularization
-- Data augmentation
-- Adam optimizer
+The pipeline uses a **denormalised One Big Table (OBT)** in PostgreSQL for structured, queryable metadata and a **Redis key-value store** for raw pixel arrays:
 
-## ✅ Experiment Tracking
-- MLflow integration
-- Hyperparameter logging
-- Metric tracking
-- Model artifact storage
+| Store | Table / Key Pattern | Purpose |
+|---|---|---|
+| PostgreSQL | `images` | Per-image feature columns (brightness, contrast, RGB means/stds, label, split) for EDA and drift baseline |
+| PostgreSQL | `experiments` | Training run log (accuracy, loss, hyperparams, MLflow run ID) |
+| PostgreSQL | `predictions` | Live inference log (predicted class, confidence, latency, input features, drift flag) |
+| Redis | `img:{split}:{idx}` | Raw 32×32×3 uint8 pixel arrays for fast training/inference retrieval |
 
-## ✅ API Deployment
-- FastAPI REST API
-- Image upload prediction endpoint
-- Interactive Swagger UI
+### Pipeline Stages
 
-## ✅ Workflow Automation
-- Apache Airflow DAG orchestration
-- Automated training pipeline
-- Dataset preparation
-- Artifact verification
+```
+1. Data Ingestion     torchvision → feature extraction → Postgres + Redis
+2. Data Preprocessing normalisation, augmentation (transforms in DataLoader)
+3. Model Development  CNN training from the store, logged to MLflow + experiments table
+4. Model Deployment   serialised .pth, served via FastAPI /predict, Dockerised
+5. Model Monitoring   every prediction logged; z-score drift detection per request + population level
+```
 
----
+### Airflow DAG
 
-# 📊 Model Performance
+```
+check_environment → ingest_data → train_model → verify_model_artifact → pipeline_complete
+```
 
-| Metric | Result |
+Tasks run inside the Airflow worker container and reach the app's Postgres/Redis/MLflow on the host via `host.docker.internal`.
+
+## Model Performance
+
+| Metric | Value |
 |---|---|
-| Final Accuracy | ~77% |
-| Epochs | 10 |
+| Architecture | 3-block CNN (BatchNorm + Dropout) |
+| Test Accuracy | ~77% (10 epochs) |
+| Optimiser | Adam (lr=0.001) |
 | Batch Size | 64 |
-| Learning Rate | 0.001 |
+| Data Source | Analytics store (Postgres labels + Redis pixels) |
 
----
+## Setup
 
-# ☁️ AWS EC2 Setup
+### Prerequisites
 
-## Launch EC2 Instance
+- AWS EC2 Ubuntu instance (t2.medium or higher)
+- Docker and Docker Compose installed
+- Python 3.9+ with venv
+- Security group ports open: 22 (SSH), 5000 (MLflow), 8000 (FastAPI), 8080 (Airflow)
 
-Recommended:
-- Ubuntu 22.04
-- t2.medium or higher
-
-### Open Ports
-
-| Port | Purpose |
-|---|---|
-| 22 | SSH |
-| 5000 | MLflow |
-| 8000 | FastAPI |
-| 8080 | Airflow |
-
----
-
-# 📥 Clone Repository
+### 1. Clone and Set Up Environment
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/cifar10-mlops.git
-
+git clone https://github.com/jeevankhatri001/Mlops-cifar-10.git
 cd cifar10-mlops
-```
-
----
-
-# 🐍 Create Virtual Environment
-
-```bash
 python3 -m venv venv
-
 source venv/bin/activate
-```
-
----
-
-# 📦 Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
----
+### 2. Configure Environment Variables
 
-# 🐳 Start PostgreSQL and Redis
-
-## docker-compose.yml
-
-```yaml
-services:
-  postgres:
-    image: postgres:16
-    container_name: cifar10_postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mlops_db
-    ports:
-      - "5432:5432"
-
-  redis:
-    image: redis:7
-    container_name: cifar10_redis
-    ports:
-      - "6379:6379"
-```
-
-## Start Containers
+Create `.env` in the repo root (gitignored — never commit this):
 
 ```bash
-docker compose up -d
+POSTGRES_USER=jeevan
+POSTGRES_PASSWORD=your_password_here
+POSTGRES_DB=mlops_db
+POSTGRES_PORT=5432
+POSTGRES_HOST=localhost
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_DB=0
+MLFLOW_TRACKING_URI=http://localhost:5000
 ```
 
----
+### 3. Start Storage Services
 
-# 📈 Run MLflow
+```bash
+docker compose up -d postgres redis
+```
+
+### 4. Initialise the Database Schema
+
+```bash
+python -m app.database.db
+# Expected: Tables in database: ['experiments', 'images', 'predictions']
+```
+
+### 5. Ingest CIFAR-10 into the Analytics Store
+
+```bash
+python -m app.ingestion.ingest
+# Ingests 50,000 train + 10,000 test images (features → Postgres, pixels → Redis)
+```
+
+### 6. Start MLflow
 
 ```bash
 mlflow server \
---backend-store-uri sqlite:///mlflow.db \
---default-artifact-root ./mlruns \
---host 0.0.0.0 \
---port 5000
+  --backend-store-uri sqlite:///mlflow.db \
+  --default-artifact-root ./mlruns \
+  --host 0.0.0.0 --port 5000 &
 ```
 
-Access MLflow:
-
-```text
-http://YOUR_EC2_IP:5000
-```
-
----
-
-# 🧠 Train Model
+### 7. Train the Model
 
 ```bash
 python -m app.training.train
+# Reads from the store, logs to MLflow + experiments table, saves models/cifar10_cnn.pth
 ```
 
-Expected Output:
-
-```text
-Epoch [1/10] ...
-Epoch [10/10] ...
-Training completed!
-```
-
----
-
-# ⚡ Run FastAPI Server
+### 8. Run the API
 
 ```bash
 uvicorn app.api.main:app --host 0.0.0.0 --port 8000
 ```
 
-Access Swagger Docs:
+### 9. Run the EDA Notebook
 
-```text
-http://YOUR_EC2_IP:8000/docs
+```bash
+python notebooks/build_eda_notebook.py
+jupyter nbconvert --to html --execute notebooks/eda.ipynb
+# Produces notebooks/eda.html with all plots embedded
 ```
 
----
+## API Endpoints
 
-# 🔍 API Usage
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/` | Health check |
+| GET | `/health` | Health check |
+| POST | `/predict` | Upload an image → prediction + confidence + drift check |
+| GET | `/monitoring/stats` | Total predictions, drift count, class distribution |
+| GET | `/monitoring/drift?window=100` | Population drift report vs training baseline |
 
-## POST `/predict`
+Swagger UI: `http://<EC2_IP>:8000/docs`
 
-Upload an image and receive a prediction.
+## Monitoring and Drift Detection
 
-Supported classes:
+Every `/predict` call:
 
-- airplane
-- automobile
-- bird
-- cat
-- deer
-- dog
-- frog
-- horse
-- ship
-- truck
+1. Computes image features (brightness, contrast, RGB channel means) on the resized 32×32 input
+2. Runs a **z-score drift check** against the training baseline (flags if any feature > 3σ from the mean)
+3. Logs the prediction, features, confidence, latency, and drift flag to the `predictions` table
 
----
+The `/monitoring/drift` endpoint aggregates the last N predictions and flags **population-level drift** when the recent feature means shift more than 2σ from baseline.
 
-# 🌊 Airflow Setup
-
-## Navigate to Airflow Directory
+## Airflow Setup
 
 ```bash
 cd airflow
-```
-
-## Start Airflow Containers
-
-```bash
+cp ../.env .env
+echo "AIRFLOW_UID=$(id -u)" >> .env
+mkdir -p plugins logs
+docker compose -f docker-compose-airflow.yml build
 docker compose -f docker-compose-airflow.yml up -d
 ```
 
-Access Airflow:
+Access Airflow UI: `http://<EC2_IP>:8080` (admin / admin)
 
-```text
-http://YOUR_EC2_IP:8080
-```
-
-Default credentials:
-
-```text
-Username: admin
-Password: admin
-```
-
----
-
-# 🔄 Airflow DAG Pipeline
-
-```text
-check_environment
-↓
-prepare_dataset
-↓
-train_model
-↓
-verify_model_artifact
-↓
-pipeline_complete
-```
-
----
-
-# 📊 MLflow Experiment Tracking
-
-Each training run logs:
-
-- Accuracy
-- Loss
-- Hyperparameters
-- Model artifacts
-
-Experiment Name:
-
-```text
-cifar10_training
-```
-
----
-
-# 🐳 Docker Containers
-
-| Container | Purpose |
-|---|---|
-| postgres | Database |
-| redis | Message broker |
-| airflow_scheduler | DAG scheduling |
-| airflow_webserver | Airflow UI |
-| airflow_worker | Task execution |
-
----
-
-# 🧰 Useful Commands
-
-## Check Running Containers
+Trigger the pipeline:
 
 ```bash
+docker exec -it airflow_scheduler airflow dags unpause cifar10_training_pipeline
+docker exec -it airflow_scheduler airflow dags trigger cifar10_training_pipeline
+```
+
+## Useful Commands
+
+```bash
+# Check containers
 docker ps
+
+# Verify ingested data
+docker exec -it cifar10_postgres psql -U jeevan -d mlops_db \
+  -c "SELECT split, count(*) FROM images GROUP BY split;"
+
+# Check experiment history
+docker exec -it cifar10_postgres psql -U jeevan -d mlops_db \
+  -c "SELECT id, run_id, round(accuracy::numeric,2) AS acc, epochs, created_at FROM experiments ORDER BY id DESC LIMIT 5;"
+
+# Check prediction log
+docker exec -it cifar10_postgres psql -U jeevan -d mlops_db \
+  -c "SELECT id, predicted_class, round(confidence::numeric,3) AS conf, drift_flag, requested_at FROM predictions ORDER BY id DESC LIMIT 10;"
+
+# Redis key count
+docker exec -it cifar10_redis redis-cli DBSIZE
 ```
 
-## View Container Logs
+## CIFAR-10 Classes
 
-```bash
-docker logs CONTAINER_NAME
-```
+airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
 
-## Restart Airflow
-
-```bash
-docker compose -f docker-compose-airflow.yml restart
-```
-
-## Stop Containers
-
-```bash
-docker compose down
-```
-
----
-
-# ⚠️ Common Issues
-
-## MLflow Connection Error
-
-Ensure:
-
-```python
-mlflow.set_tracking_uri("http://host.docker.internal:5000")
-```
-
----
-
-## Permission Errors Inside Containers
-
-Save models inside project directories:
-
-```python
-models/cifar10_cnn.pth
-```
-
-Avoid:
-
-```text
-/home/ubuntu
-```
-
-inside Docker containers.
-
----
-
-# 🚀 Future Improvements
-
-- CI/CD using GitHub Actions
-- Kubernetes deployment
-- Model monitoring
-- GPU training
-- Automated retraining
-- Unit testing
-- Terraform infrastructure
-
----
-
-# 🎓 Learning Outcomes
-
-This project demonstrates:
-
-- End-to-end MLOps workflow
-- Deep learning deployment
-- Experiment tracking
-- Workflow orchestration
-- Cloud deployment
-- Docker containerization
-
----
-
-# 👨‍💻 Author
+## Author
 
 **Jeevan Khatri**
-
-BSc Computer Science with AI  
-MLOps | Computer Vision | AI Engineering
+Birmingham City University — CMP5366 MLOps and Data Analytics Pipeline
