@@ -129,7 +129,7 @@ Create `.env` in the repo root (gitignored — never commit this):
 
 ```bash
 POSTGRES_USER=jeevan
-POSTGRES_PASSWORD=your_password_here
+POSTGRES_PASSWORD=mlops123@
 POSTGRES_DB=mlops_db
 POSTGRES_PORT=5432
 POSTGRES_HOST=localhost
