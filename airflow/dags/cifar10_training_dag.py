@@ -12,7 +12,11 @@ PROJECT = "/opt/airflow/project"
 # those services on the HOST via host.docker.internal (mapped in
 # docker-compose-airflow.yml) instead of 'localhost'.
 STORE_ENV = (
-    "POSTGRES_HOST=host.docker.internal "
+    "MARIADB_HOST=host.docker.internal "
+    "MARIADB_PORT=3306 "
+    "MARIADB_USER=mlops "
+    "MARIADB_PASSWORD=mlops123 "
+    "MARIADB_DB=mlops_db "
     "REDIS_HOST=host.docker.internal "
     "MLFLOW_TRACKING_URI=http://host.docker.internal:5000"
 )

@@ -1,4 +1,5 @@
 """Prediction logging + population-level drift reporting."""
+from datetime import datetime
 from sqlalchemy import text
 from app.database.db import engine
 from app.monitoring.baseline import compute_baseline, BASELINE_FEATURES
@@ -6,11 +7,13 @@ from app.monitoring.baseline import compute_baseline, BASELINE_FEATURES
 _LOG_SQL = text(
     """
     INSERT INTO predictions
-        (filename, predicted_label, predicted_class, confidence, latency_ms,
-         mean_r, mean_g, mean_b, brightness, contrast, model_version, drift_flag)
+        (requested_at, filename, predicted_label, predicted_class, confidence,
+         latency_ms, mean_r, mean_g, mean_b, brightness, contrast,
+         model_version, drift_flag)
     VALUES
-        (:filename, :predicted_label, :predicted_class, :confidence, :latency_ms,
-         :mean_r, :mean_g, :mean_b, :brightness, :contrast, :model_version, :drift_flag)
+        (:requested_at, :filename, :predicted_label, :predicted_class, :confidence,
+         :latency_ms, :mean_r, :mean_g, :mean_b, :brightness, :contrast,
+         :model_version, :drift_flag)
     """
 )
 
@@ -19,14 +22,19 @@ def log_prediction(result, filename, model_version="cifar10_cnn", drift_flag=Fal
     f = result["features"]
     with engine.begin() as conn:
         conn.execute(_LOG_SQL, {
-            "filename": filename,
+            "requested_at":    datetime.utcnow(),
+            "filename":        filename,
             "predicted_label": result["predicted_label"],
             "predicted_class": result["predicted_class"],
-            "confidence": result["confidence"],
-            "latency_ms": result["latency_ms"],
-            "mean_r": f["mean_r"], "mean_g": f["mean_g"], "mean_b": f["mean_b"],
-            "brightness": f["brightness"], "contrast": f["contrast"],
-            "model_version": model_version, "drift_flag": drift_flag,
+            "confidence":      result["confidence"],
+            "latency_ms":      result["latency_ms"],
+            "mean_r":          f["mean_r"],
+            "mean_g":          f["mean_g"],
+            "mean_b":          f["mean_b"],
+            "brightness":      f["brightness"],
+            "contrast":        f["contrast"],
+            "model_version":   model_version,
+            "drift_flag":      int(drift_flag),
         })
 
 
@@ -57,9 +65,10 @@ def drift_report(window=100):
         drifting = shift > 2.0
         report["features"][f] = {
             "baseline_mean": round(base["mean"], 2),
-            "recent_mean": round(recent, 2),
-            "shift_in_stds": round(shift, 2),
-            "drifting": drifting,
+            "recent_mean":   round(recent, 2),
+            "z_score":       round(shift, 3),
+            "drifting":      drifting,
         }
-        report["drift_detected"] = report["drift_detected"] or drifting
+        if drifting:
+            report["drift_detected"] = True
     return report

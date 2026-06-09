@@ -1,0 +1,152 @@
+# CIFAR-10 MLOps Pipeline
+
+End-to-end MLOps pipeline for image classification using CIFAR-10 dataset, built as part of CMP5366.
+
+## Architecture
+
+A 3-block CNN trained on 60,000 CIFAR-10 images (32×32 RGB), served via FastAPI with real-time drift monitoring. All services run on a single AWS EC2 Ubuntu instance.
+
+## Tech Stack
+
+| Component | Tool | Purpose |
+|-----------|------|---------|
+| Database | PostgreSQL | Structured metadata (images, experiments, predictions) |
+| Cache | Redis | Raw pixel array storage (key-value) |
+| Orchestration | Apache Airflow | DAG-based pipeline automation |
+| Experiment Tracking | MLflow | Parameters, metrics, model artifacts |
+| API | FastAPI | Prediction serving + monitoring endpoints |
+| Frontend | Streamlit | Dashboard with prediction, monitoring, drift tabs |
+| Monitoring | Custom z-score + Evidently AI | Data drift detection |
+| Containerisation | Docker Compose + Docker Hub | Service orchestration and image registry |
+| CI/CD | GitHub Actions | Automated linting and testing on push |
+
+## Project Structure
+
+```
+cifar10-mlops/
+├── app/
+│   ├── api/
+│   │   └── main.py              # FastAPI endpoints (/predict, /monitoring/*)
+│   ├── database/
+│   │   ├── db.py                # SQLAlchemy engine + session
+│   │   ├── redis_client.py      # Redis connection
+│   │   └── schema.sql           # PostgreSQL table definitions
+│   ├── ingestion/
+│   │   ├── features.py          # Per-image feature extraction
+│   │   └── ingest.py            # ETL: torchvision → Postgres + Redis
+│   ├── monitoring/
+│   │   ├── baseline.py          # Training baseline statistics
+│   │   ├── drift.py             # Z-score drift detection
+│   │   ├── monitor.py           # Prediction logging + drift check
+│   │   └── evidently_monitor.py # Evidently AI drift reports
+│   └── training/
+│       ├── model.py             # CIFAR10CNN (3-block CNN)
+│       ├── dataset.py           # StoreDataset + DataLoader
+│       ├── train.py             # Training loop with MLflow logging
+│       └── predict.py           # Model inference
+├── airflow/
+│   └── dags/                    # Airflow DAG definitions
+├── tests/
+│   └── test_pipeline.py         # Smoke tests for CI/CD
+├── scripts/
+│   └── confusion_matrix.py      # Confusion matrix generation
+├── notebooks/
+│   └── eda.ipynb                # Exploratory data analysis
+├── streamlit_app.py             # Streamlit dashboard
+├── docker-compose.yml           # Postgres, Redis, Airflow
+├── .github/workflows/ci.yml     # GitHub Actions CI/CD
+└── requirements.txt
+```
+
+## Pipeline Flow
+
+```
+CIFAR-10 → Ingestion (ETL) → PostgreSQL (metadata) + Redis (pixels)
+    → Training (StoreDataset → CNN → Adam) → MLflow (tracking)
+    → FastAPI (serving) → Monitoring (drift detection)
+```
+
+Airflow orchestrates the pipeline via a sequential DAG:
+`check_environment → ingest_data → train_model → verify_model_artifact → pipeline_complete`
+
+## Model
+
+| Parameter | Value |
+|-----------|-------|
+| Architecture | 3-block CNN (Conv → BatchNorm → ReLU → Pool) × 3 |
+| Channels | 3 → 32 → 64 → 128 |
+| Classifier | FC(2048→256) → Dropout(0.5) → FC(256→10) |
+| Optimizer | Adam |
+| Learning Rate | 0.001 |
+| Batch Size | 64 |
+| Epochs | 10 |
+| Test Accuracy | ~77% |
+
+## Storage Design
+
+Polyglot persistence with a denormalised One Big Table (OBT) approach:
+
+- **PostgreSQL**: `images` table (features, labels, splits), `experiments` table (training logs), `predictions` table (inference logs)
+- **Redis**: Raw pixel arrays stored as `img:{split}:{idx}` keys for fast retrieval during training
+
+## Monitoring
+
+Two-layer drift detection:
+
+1. **Per-prediction (custom)**: Z-score check on 8 features (RGB means/stds, brightness, contrast) against training baseline. Flags individual predictions with |z| > 3.0.
+2. **Population-level (Evidently AI)**: Statistical drift report comparing training distribution against recent predictions using the Evidently DataDriftPreset.
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/predict` | POST | Upload image → class prediction + confidence + drift flag |
+| `/monitoring/stats` | GET | Aggregated prediction statistics |
+| `/monitoring/drift` | GET | Population-level drift assessment |
+| `/docs` | GET | Swagger UI |
+
+## Docker Hub
+
+Images published to [Docker Hub](https://hub.docker.com/u/jeevan04):
+
+- `jeevan04/cifar10-airflow`
+- `jeevan04/cifar10-postgres`
+- `jeevan04/cifar10-redis`
+
+## Setup
+
+```bash
+# Clone
+git clone https://github.com/jeevankhatri001/Mlops-cifar-10.git
+cd Mlops-cifar-10
+
+# Environment
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Start services
+docker compose up -d
+
+# Run ingestion
+python -m app.ingestion.ingest
+
+# Start MLflow
+mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns &
+
+# Train
+python -m app.training.train
+
+# Start API
+uvicorn app.api.main:app --host 0.0.0.0 --port 8000 &
+
+# Start frontend
+streamlit run streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+```
+
+## CI/CD
+
+GitHub Actions runs on every push to `main`:
+1. **Lint** — flake8 on `app/` directory
+2. **Test** — pytest smoke tests (model import, forward pass, parameter count, API import)
+3. **Docker build** — validates Docker Compose configuration

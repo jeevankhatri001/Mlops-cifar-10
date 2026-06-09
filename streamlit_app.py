@@ -169,7 +169,7 @@ with st.sidebar:
     st.write("CMP5366 Assignment")
     st.divider()
     st.write("**Tech stack:**")
-    st.write("PostgreSQL · Redis · Airflow")
+    st.write("MariaDB · Redis · Airflow")
     st.write("MLflow · FastAPI · Streamlit")
     st.write("Docker · GitHub Actions")
     st.divider()

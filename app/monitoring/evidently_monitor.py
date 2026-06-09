@@ -15,20 +15,24 @@ from urllib.parse import quote_plus
 from evidently import Report
 from evidently.presets import DataDriftPreset
 
-# Database connection
-DB_USER = os.getenv("DB_USER", "jeevan")
-DB_PASS = os.getenv("DB_PASS", "jeevan123")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "mlops_db")
+# MariaDB connection
+DB_USER = os.getenv("MARIADB_USER", "mlops")
+DB_PASS = os.getenv("MARIADB_PASSWORD", "mlops123")
+DB_HOST = os.getenv("MARIADB_HOST", "localhost")
+DB_PORT = os.getenv("MARIADB_PORT", "3306")
+DB_NAME = os.getenv("MARIADB_DB", "mlops_db")
 
-DATABASE_URL = f"postgresql://{DB_USER}:{quote_plus(DB_PASS)}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = (
+    f"mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASS)}"
+    f"@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
+)
 
 FEATURE_COLS = ["mean_r", "mean_g", "mean_b", "std_r", "std_g", "std_b", "brightness", "contrast"]
 
 
 def get_reference_data(engine):
-    query = text(f"SELECT {', '.join(FEATURE_COLS)} FROM images WHERE split = 'train' LIMIT 5000")
+    cols = ", ".join(FEATURE_COLS)
+    query = text(f"SELECT {cols} FROM images WHERE split = 'train' LIMIT 5000")
     with engine.connect() as conn:
         df = pd.read_sql(query, conn)
     print(f"Reference data: {len(df)} rows")
@@ -36,9 +40,9 @@ def get_reference_data(engine):
 
 
 def get_current_data(engine):
-    # Try predictions table first, fall back to test split
+    cols = ", ".join(FEATURE_COLS)
     try:
-        query = text(f"SELECT {', '.join(FEATURE_COLS)} FROM predictions ORDER BY created_at DESC LIMIT 500")
+        query = text(f"SELECT {cols} FROM predictions ORDER BY requested_at DESC LIMIT 500")
         with engine.connect() as conn:
             df = pd.read_sql(query, conn)
         if len(df) > 0:
@@ -48,7 +52,7 @@ def get_current_data(engine):
         print(f"Predictions table issue: {e}")
 
     print("Falling back to test split...")
-    query = text(f"SELECT {', '.join(FEATURE_COLS)} FROM images WHERE split = 'test' LIMIT 2000")
+    query = text(f"SELECT {cols} FROM images WHERE split = 'test' LIMIT 2000")
     with engine.connect() as conn:
         df = pd.read_sql(query, conn)
     print(f"Current data: {len(df)} rows (test split)")
@@ -56,7 +60,7 @@ def get_current_data(engine):
 
 
 def generate_drift_report():
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
     print("Loading reference data (training set)...")
     reference = get_reference_data(engine)
@@ -76,8 +80,7 @@ def generate_drift_report():
     snapshot.save_html(output_path)
     print(f"\nReport saved to: {output_path}")
 
-    result = snapshot.dict()
-    return result
+    return snapshot.dict()
 
 
 if __name__ == "__main__":
